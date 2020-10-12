@@ -1,0 +1,50 @@
+version: '3'
+services:
+  db:
+    image: mariadb:latest
+    container_name: cake4_cent8_db
+    command: '--character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci'
+    environment:
+      MYSQL_DATABASE: cake4_cent8_db
+      MYSQL_USER: cake4_cent8_db
+      MYSQL_PASSWORD: cake4_cent8_db
+      MYSQL_ROOT_PASSWORD: 7fmbnt22
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+    expose:
+      - 3306
+  smtp:
+    image: mailhog/mailhog:latest
+    container_name: cake4_cent8_smtp
+    ports:
+      - 8025:8025
+      - 1025:1025
+    expose:
+      - 8025
+      - 1025
+    depends_on:
+      - db
+  web:
+    build:
+      context: .
+      dockerfile: centos8/Dockerfile
+      args:
+        APP_NAME: $APP_NAME
+    tty: true
+    container_name: cake4_cent8_web
+    environment:
+      VIRTUAL_HOST: d.cake4.cent8.vm
+    volumes:
+      - /usr/workspaces/d.cake4.cent8.vm/html:/var/www/html
+      - /usr/workspaces/d.cake4.cent8.vm/${APP_NAME}:/var/www/${APP_NAME}
+      - ./centos8/conf.d/default.conf:/etc/httpd/conf.d/default.conf
+      - ./centos8/log:/var/log/httpd
+    privileged: true
+    expose:
+      - 80
+    depends_on:
+      - smtp
+networks:
+  default:
+    external:
+      name: common_link
